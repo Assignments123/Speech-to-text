@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<head>
+  <title>Voice Recorder</title>
+  
+</head>
+<body>
+  <button id="startButton">Start Recording</button>
+  <button id="stopButton" disabled>Stop Recording</button>
+
+  <script>
+    let mediaRecorder;
+    let chunks = [];
+
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
+
+    function startRecording() {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+
+          startButton.disabled = true;
+          stopButton.disabled = false;
+
+          mediaRecorder.addEventListener('dataavailable', function(e) {
+            chunks.push(e.data);
+          });
+        })
+        .catch(function(err) {
+          console.log('Unable to access the microphone: ' + err);
+        });
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+
+      startButton.disabled = false;
+      stopButton.disabled = true;
+
+      mediaRecorder.addEventListener('stop', function() {
+        const audioBlob = new Blob(chunks);
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        const audioElement = document.createElement('audio');
+        audioElement.controls = true;
+        audioElement.src = audioUrl;
+        document.body.appendChild(audioElement);
+
+        sendAudioData(audioBlob);
+        
+        chunks = [];
+      });
+    }
+
+    function sendAudioData(audioBlob) {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const request = new XMLHttpRequest();
+      request.open('POST', '/audio', true);
+      request.onreadystatechange = function() {
+        if (request.readyState === 4 && request.status === 200) {
+
+          alert('Audio data sent successfully.');
+        }
+      };
+      request.send(formData);
+    }
+  </script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<head>
+  <title>Voice Recorder</title>
+  <style>
+    /* CSS styles remain the same */
+  </style>
+</head>
+<body>
+  <button id="startButton">Start Recording</button>
+  <button id="stopButton" disabled>Stop Recording</button>
+  <input type="file" id="audioFileInput">
+
+  <div id="transcript"></div>
+
+  <script>
+    let mediaRecorder;
+    let chunks = [];
+
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const audioFileInput = document.getElementById('audioFileInput');
+    const transcriptDiv = document.getElementById('transcript');
+
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
+    audioFileInput.addEventListener('change', handleFileSelect);
+
+    function startRecording() {
+      // Audio recording code remains the same
+    }
+
+    function stopRecording() {
+      // Audio recording code remains the same
+
+      mediaRecorder.addEventListener('stop', function() {
+        // ...
+
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.wav');
+
+        const request = new XMLHttpRequest();
+        request.open('POST', '/audio', true);
+        request.onreadystatechange = function() {
+          if (request.readyState === 4 && request.status === 200) {
+            const response = JSON.parse(request.responseText);
+            const transcript = response.transcript;
+            transcriptDiv.textContent = transcript;
+            console.log('Transcript received: ' + transcript);
+          }
+        };
+        request.send(formData);
+        
+        chunks = [];
+      });
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const audioData = e.target.result;
+        const audioBlob = new Blob([audioData], { type: 'audio/wav' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.wav');
+
+        const request = new XMLHttpRequest();
+        request.open('POST', '/audio', true);
+        request.onreadystatechange = function() {
+          if (request.readyState === 4 && request.status === 200) {
+            const response = JSON.parse(request.responseText);
+            const transcript = response.transcript;
+            transcriptDiv.textContent = transcript;
+            console.log('Transcript received: ' + transcript);
+          }
+        };
+        request.send(formData);
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+  </script>
+</body>
+</html> -->
