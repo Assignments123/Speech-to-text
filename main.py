@@ -1,9 +1,11 @@
 import speech_recognition as sr
 from flask import Flask ,request, render_template ,redirect
+from werkzeug.utils import secure_filename
 # from google.cloud import speech
-from pydub import AudioSegment
+# from pydub import AudioSegment
+# import mimetypes
 # import subprocess
-
+import tempfile
 
 app = Flask(__name__)
 
@@ -16,53 +18,83 @@ def index():
 
 @app.route('/audio/',methods = ['POST']) 
 def audio():
+    """endpoint to save and generate transcript of the audio file sent from Client
+
+        methods:
+            POST
+
+        arguments:
+            audio file
+        
+        returns:
+            transcript of audio file
+        
+    """
     
     print("Inside audio")
 
     # tried another ways to store the file so that it wont get corrupted
-    # file_path = request.files['audio'].read()
+    # audio_file = request.files['audio'].read()
 
-    # mp3_file_path = "C:/Users/manoj.kanadi/manoj/speech to text/recording3.mp3"
-
-
-    # with open(mp3_file_path, 'wb') as f:
-    #     f.write(file_path)
+    # mp3_audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/recording3.mp3"
 
 
-    file_path = request.files['audio']
-    if file_path.filename == "":
+    # with open(mp3_audio_file, 'wb') as f:
+    #     f.write(audio_file)
+
+
+    audio_file = request.files['audio']
+    if audio_file.filename == "":
         return "no file available"
-    filetype = file_path.content_type
+    # filename = audio_file.filename
+    filename = secure_filename(audio_file.filename)
+    print("filename is ",filename)
+    filetype = audio_file.content_type
     print("type of file ", filetype)
 
+   
+
+    # Save the audio file to a temporary location
+
+    # with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+
+    #     temp_path = temp_file.name
+
+    #     audio_file.save(temp_path)
+    
     # while storing file sent from UI its getting corrupted and thats why not getting transcripted
-    file_path.save("C:/Users/manoj.kanadi/manoj/speech to text/recording.wav")
-    file_path = "C:/Users/manoj.kanadi/manoj/speech to text/recording.mp3"
+    # audio_file.save("C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/recording.wav")
+    # audio_file.save(path)
+
+    path = f"C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/{filename}"
+    audio_file.save(path,buffer_size=16384)
+    # audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/recording.wav"
 
 
-    mp3_file_path = "C:/Users/manoj.kanadi/manoj/speech to text/recording2.mp3"
-    audio = AudioSegment.from_wav(file_path)
-    audio.export(mp3_file_path, format='mp3')
+    # to store wav file into mp3 format.
+    # mp3_audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/recording2.mp3"
+    # audio = AudioSegment.from_wav(audio_file)
+    # audio.export(mp3_audio_file, format='mp3')
 
 
     if "audio" not in request.files:
             return redirect(request.url)
     
-    file_path = "C:/Users/manoj.kanadi/manoj/speech to text/OSR_us_000_0011_8k.wav"
+    # audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/OSR_us_000_0011_8k.wav"
 
 # the function is able to generate transcript of file stored locally but is 
 # when accessing file sent from html page its not able to access those files
-    if file_path:
+    if audio_file:
         recognizer = sr.Recognizer()
-        audioFile = sr.AudioFile(file_path)
+        audioFile = sr.AudioFile(audio_file)
         with audioFile as source:
             data = recognizer.record(source)
         transcript = recognizer.recognize_google(data, key=None)
-        print(transcript)
+        # print(transcript)
 
     # tried to open file with different modes while saved in different extension i.e. wav
     # recognizer = sr.Recognizer()
-    # with wave.open(file_path, 'rb') as wav_file:
+    # with wave.open(audio_file, 'rb') as wav_file:
     #     frames = wav_file.readframes(wav_file.getnframes())
 
     # transcript = recognizer.recognize_google(frames)

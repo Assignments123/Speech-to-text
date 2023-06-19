@@ -18,37 +18,57 @@
     stopButton.addEventListener('click', stopRecording);
 
     function startRecording() {
+      // function to record and store user voice.
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(function(stream) {
           mediaRecorder = new MediaRecorder(stream);
+          // mediaRecorder.mimeType = 'audio/wav';
           mediaRecorder.start();
 
+          // when start recording button in clicked then it becomes disabled 
+          // and stop recording button in enabled
           startButton.disabled = true;
           stopButton.disabled = false;
 
+          // if data is available then call the anonymous function
+          // which will push the audio data which is available in e into chunk array
+          // this process will continue till user clicks on stop button
           mediaRecorder.addEventListener('dataavailable', function(e) {
             chunks.push(e.data);
           });
         })
+        // catch if any error occurs during collecting the data
         .catch(function(err) {
           console.log('Unable to access the microphone: ' + err);
         });
     }
 
     function stopRecording() {
+      // function to stop the recording 
+      // stop the recorder
       mediaRecorder.stop();
 
+      // disable the stop button and enable start button
       startButton.disabled = false;
       stopButton.disabled = true;
 
+      // add event listener on stop event and 
       mediaRecorder.addEventListener('stop', function() {
-        const audioBlob = new Blob(chunks);
+
+        // create a blob object from recorder audio chunks
+        const audioBlob = new Blob(chunks ,{type:'wav'});
+        // create a url to access the audioblob in filelike structure 
+        // which will be sent to server for further process
         const audioUrl = URL.createObjectURL(audioBlob);
 
         const audioElement = document.createElement('audio');
         audioElement.controls = true;
         audioElement.src = audioUrl;
+        // to directly start the audio
+        // audioElement.autoplay = true;
         document.body.appendChild(audioElement);
+
+        // add the audioElement to html page so that audio can be visible on same web page
 
         sendAudioData(audioBlob);
         
@@ -58,14 +78,30 @@
 
     function sendAudioData(audioBlob) {
       const formData = new FormData();
+      // append audio to form Data
       formData.append('audio', audioBlob, 'recording.wav');
+      // fetch('/audio', {method: 'POST',
+      //   body: formData})
+      //   .then(function(response) {
+      //   return response.text();
+      // }).then(function(text){
+      //   console.log(text)
+      // })
 
+
+      // create new http request to call handler function
       const request = new XMLHttpRequest();
+      request.overrideMimeType("audio/wav");
       request.open('POST', '/audio', true);
+
+      // check the response of handler function and 
       request.onreadystatechange = function() {
         if (request.readyState === 4 && request.status === 200) {
 
           alert('Audio data sent successfully.');
+        }
+        else{
+          alert('Audio not sent,issue occured')
         }
       };
       request.send(formData);
@@ -73,89 +109,3 @@
   </script>
 </body>
 </html>
-
-<!-- <!DOCTYPE html>
-<head>
-  <title>Voice Recorder</title>
-  <style>
-    /* CSS styles remain the same */
-  </style>
-</head>
-<body>
-  <button id="startButton">Start Recording</button>
-  <button id="stopButton" disabled>Stop Recording</button>
-  <input type="file" id="audioFileInput">
-
-  <div id="transcript"></div>
-
-  <script>
-    let mediaRecorder;
-    let chunks = [];
-
-    const startButton = document.getElementById('startButton');
-    const stopButton = document.getElementById('stopButton');
-    const audioFileInput = document.getElementById('audioFileInput');
-    const transcriptDiv = document.getElementById('transcript');
-
-    startButton.addEventListener('click', startRecording);
-    stopButton.addEventListener('click', stopRecording);
-    audioFileInput.addEventListener('change', handleFileSelect);
-
-    function startRecording() {
-      // Audio recording code remains the same
-    }
-
-    function stopRecording() {
-      // Audio recording code remains the same
-
-      mediaRecorder.addEventListener('stop', function() {
-        // ...
-
-        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.wav');
-
-        const request = new XMLHttpRequest();
-        request.open('POST', '/audio', true);
-        request.onreadystatechange = function() {
-          if (request.readyState === 4 && request.status === 200) {
-            const response = JSON.parse(request.responseText);
-            const transcript = response.transcript;
-            transcriptDiv.textContent = transcript;
-            console.log('Transcript received: ' + transcript);
-          }
-        };
-        request.send(formData);
-        
-        chunks = [];
-      });
-    }
-
-    function handleFileSelect(event) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-        const audioData = e.target.result;
-        const audioBlob = new Blob([audioData], { type: 'audio/wav' });
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.wav');
-
-        const request = new XMLHttpRequest();
-        request.open('POST', '/audio', true);
-        request.onreadystatechange = function() {
-          if (request.readyState === 4 && request.status === 200) {
-            const response = JSON.parse(request.responseText);
-            const transcript = response.transcript;
-            transcriptDiv.textContent = transcript;
-            console.log('Transcript received: ' + transcript);
-          }
-        };
-        request.send(formData);
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
-  </script>
-</body>
-</html> -->
