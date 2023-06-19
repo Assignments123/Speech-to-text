@@ -6,8 +6,10 @@
 <body>
   <button id="startButton">Start Recording</button>
   <button id="stopButton" disabled>Stop Recording</button>
-
+  <br><br>
+  <p id="result"></p>
   <script>
+    const result = document.getElementById('result');
     let mediaRecorder;
     let chunks = [];
 
@@ -22,6 +24,35 @@
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(function(stream) {
           mediaRecorder = new MediaRecorder(stream);
+          chunks = [];
+          // *********************************************************************************
+          // mediaRecorder.addEventListener('dataavailable', function(e) {
+          //   chunks.push(e.data);
+          // });
+          // mediaRecorder.addEventListener('stop', function() {
+          //   const blob = new Blob(chunks, { type: 'audio/webm' });
+          //   chunks.length = 0;
+
+          //   const formData = new FormData();
+          //   formData.append('audio', blob, 'recording.wav');
+            
+          //   fetch('/stt', {
+          //     method: 'POST',
+          //     body: formData
+          //   })
+          //   .then(function(response) {
+          //     return response.text();
+          //   })
+          //   .then(function(text) {
+          //     result.textContent = text;
+          //     // Automatically turn the microphone back on
+          //     startRecording();
+          //   })
+          //   .catch(function(error) {
+          //     console.error('Error:', error);
+          //   });
+          // });
+          // **************************************************************************************
           // mediaRecorder.mimeType = 'audio/wav';
           mediaRecorder.start();
 

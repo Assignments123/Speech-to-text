@@ -1,11 +1,12 @@
 import speech_recognition as sr
-from flask import Flask ,request, render_template ,redirect
+from flask import Flask ,request, render_template ,redirect, jsonify
 from werkzeug.utils import secure_filename
 # from google.cloud import speech
-# from pydub import AudioSegment
+from pydub import AudioSegment
 # import mimetypes
 # import subprocess
 import tempfile
+import os
 
 app = Flask(__name__)
 
@@ -14,6 +15,30 @@ app = Flask(__name__)
 def index():
     return render_template('audio.html')
 
+
+@app.route("/stt", methods=["POST"])
+def speech_to_text():
+    audio_file = request.files['audio']
+    
+    audio_file.save(f"./audio/{audio_file.filename}")
+    audio = AudioSegment.from_file(f"./audio/{audio_file.filename}")
+    audio.export(f"./audio/processed/{audio_file.filename}", format='wav')
+    
+    # Perform speech-to-text processing using the converted audio file
+    import speech_recognition as sr
+    
+    r = sr.Recognizer()
+    with sr.AudioFile(f"./audio/processed/{audio_file.filename}") as source:
+        audio = r.record(source)
+    
+    try:
+        text = r.recognize_google(audio)
+        # return jsonify({'text': text})
+        return jsonify(text)
+    except sr.UnknownValueError:
+        return jsonify({'error': 'Could not understand the speech'})
+    except sr.RequestError as e:
+        return jsonify({'error': 'Error: {0}'.format(e)})
 
 
 @app.route('/audio/',methods = ['POST']) 
@@ -66,10 +91,11 @@ def audio():
     # audio_file.save("C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/recording.wav")
     # audio_file.save(path)
 
-    path = f"C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/{filename}"
-    audio_file.save(path,buffer_size=16384)
+    # path = f"{filename}"
+    audio_file.save(f"./audio/{audio_file.filename}",buffer_size=16384)
     # audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/recording.wav"
-
+    audio = AudioSegment.from_file(f"./audio/{audio_file.filename}")
+    audio.export(f"./audio/processed/{audio_file.filename}", format='wav')
 
     # to store wav file into mp3 format.
     # mp3_audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/recording2.mp3"
