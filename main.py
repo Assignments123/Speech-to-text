@@ -1,9 +1,8 @@
 import speech_recognition as sr
-from flask import Flask ,request, render_template ,redirect, jsonify
-from werkzeug.utils import secure_filename
+from flask import Flask ,request, render_template , jsonify
+
 from pydub import AudioSegment
-import tempfile
-import os
+
 
 app = Flask(__name__)
 
