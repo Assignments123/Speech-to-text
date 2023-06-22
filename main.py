@@ -1,10 +1,7 @@
 import speech_recognition as sr
 from flask import Flask ,request, render_template ,redirect, jsonify
 from werkzeug.utils import secure_filename
-# from google.cloud import speech
 from pydub import AudioSegment
-# import mimetypes
-# import subprocess
 import tempfile
 import os
 
@@ -34,6 +31,7 @@ def speech_to_text():
     try:
         text = r.recognize_google(audio)
         # return jsonify({'text': text})
+        print(text)
         return jsonify(text)
     except sr.UnknownValueError:
         return jsonify({'error': 'Could not understand the speech'})
@@ -46,96 +44,62 @@ def audio():
     """endpoint to save and generate transcript of the audio file sent from Client
 
         methods:
+        -------
             POST
 
-        arguments:
+        parameter:
+        ---------
             audio file
         
         returns:
+        -------
             transcript of audio file
+        raises:
+        ------
+            unknownvalueerror:
+                if audio is not clear
+                if audio language is not english
         
     """
     
     print("Inside audio")
 
-    # tried another ways to store the file so that it wont get corrupted
-    # audio_file = request.files['audio'].read()
-
-    # mp3_audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/recording3.mp3"
-
-
-    # with open(mp3_audio_file, 'wb') as f:
-    #     f.write(audio_file)
-
-
     audio_file = request.files['audio']
     if audio_file.filename == "":
         return "no file available"
-    # filename = audio_file.filename
-    filename = secure_filename(audio_file.filename)
-    print("filename is ",filename)
-    filetype = audio_file.content_type
-    print("type of file ", filetype)
 
-   
-
-    # Save the audio file to a temporary location
-
-    # with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-
-    #     temp_path = temp_file.name
-
-    #     audio_file.save(temp_path)
-    
-    # while storing file sent from UI its getting corrupted and thats why not getting transcripted
-    # audio_file.save("C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/recording.wav")
-    # audio_file.save(path)
-
-    # path = f"{filename}"
-    audio_file.save(f"./audio/{audio_file.filename}",buffer_size=16384)
-    # audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/recording.wav"
+    # save the audio file sent by user
+    audio_file.save(f"./audio/{audio_file.filename}")
+    # read audio content of file and store it into a variable
     audio = AudioSegment.from_file(f"./audio/{audio_file.filename}")
+    # export the audio data into another file and store that file in required extension 
     audio.export(f"./audio/processed/{audio_file.filename}", format='wav')
 
-    # to store wav file into mp3 format.
-    # mp3_audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/recording2.mp3"
-    # audio = AudioSegment.from_wav(audio_file)
-    # audio.export(mp3_audio_file, format='mp3')
-
-
-    if "audio" not in request.files:
-            return redirect(request.url)
-    
-    # audio_file = "C:/Users/manoj.kanadi/manoj/speech to text/Speech-to-text/OSR_us_000_0011_8k.wav"
-
-# the function is able to generate transcript of file stored locally but is 
-# when accessing file sent from html page its not able to access those files
-    if audio_file:
+    try:
+        # create object of speech recognizer
         recognizer = sr.Recognizer()
-        audioFile = sr.AudioFile(audio_file)
+        # provide audio file of which we want to get transcript
+        audioFile = sr.AudioFile(f"./audio/processed/{audio_file.filename}")
+        # open the audio file 
         with audioFile as source:
+            # record the audio and save it into variable
             data = recognizer.record(source)
-        transcript = recognizer.recognize_google(data, key=None)
-        # print(transcript)
+        # get transcript of audio
+        transcript = recognizer.recognize_google(data)
+        print('transcript', transcript)
+        return jsonify(transcript)
 
-    # tried to open file with different modes while saved in different extension i.e. wav
-    # recognizer = sr.Recognizer()
-    # with wave.open(audio_file, 'rb') as wav_file:
-    #     frames = wav_file.readframes(wav_file.getnframes())
-
-    # transcript = recognizer.recognize_google(frames)
-
-
-    print('transcript', transcript)
-
-
-    return render_template('audio.html')
+    except sr.UnknownValueError:
+        return jsonify({'error': 'Could not understand the speech'})
+    except sr.RequestError as e:
+        return jsonify({'error': 'Error: {0}'.format(e)})
 
 
 
 @app.route('/main/' , methods = ['GET','POST'])
 def main():
     """endpoint for accepting user input as voice and print transcript of the audio
+        this works with console only 
     """
     r = sr.Recognizer()
     with sr.Microphone() as source:
